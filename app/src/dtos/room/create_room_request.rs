@@ -1,0 +1,10 @@
+use serde::Deserialize;
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CreateRoomRequest {
+    pub title: String,
+    pub class_level: String,
+    pub cover: Option<String>,
+    pub description: Option<String>,
+}
