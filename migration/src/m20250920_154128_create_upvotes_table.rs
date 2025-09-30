@@ -25,7 +25,10 @@ impl MigrationTrait for Migration {
                             .on_update(ForeignKeyAction::Restrict),
                     )
                     .col(uuid(Upvotes::UserId))
-                    .col(timestamp_with_time_zone(Upvotes::CreatedAt))
+                    .col(
+                        timestamp_with_time_zone(Upvotes::CreatedAt)
+                            .default(Expr::current_timestamp()),
+                    )
                     .to_owned(),
             )
             .await?;

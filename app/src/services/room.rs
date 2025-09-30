@@ -1,5 +1,5 @@
 use crate::dtos::room::{CreateRoomRequest, FindAllRoomQuery, UpdateRoomRequest};
-use crate::entities::rooms;
+use crate::entities::{notes, rooms, upvotes};
 use crate::errors::{AppError, Result};
 use crate::extractors::Pagination;
 use crate::repositories;
@@ -25,16 +25,26 @@ pub async fn find_all(
     repositories::room::find_all_active_paginated(db, query).await
 }
 
-pub async fn get_by_id(db: &DatabaseConnection, id: i32) -> Result<rooms::Model> {
-    let found_room = repositories::room::get_active_by_id(db, id).await?;
-    let Some(found_room) = found_room else {
-        return Err(AppError::NotFound(String::from("Room not found.")));
-    };
-    Ok(found_room)
+pub async fn find_all_archive(
+    db: &DatabaseConnection,
+    query: &Pagination<FindAllRoomQuery>,
+) -> Result<(ItemsAndPagesNumber, Vec<rooms::Model>)> {
+    repositories::room::find_all_archive_paginated(db, query).await
 }
 
-pub async fn get_today_by_id(db: &DatabaseConnection, id: i32) -> Result<rooms::Model> {
-    let found_room = repositories::room::get_active_by_id_and_today(db, id).await?;
+pub async fn get_by_id(
+    db: &DatabaseConnection,
+    id: i32,
+) -> Result<(rooms::Model, Vec<(notes::Model, Vec<upvotes::Model>)>)> {
+    let found_room = repositories::room::get_active_by_id(db, id).await?;
+    let Some((found_room, notes)) = found_room else {
+        return Err(AppError::NotFound(String::from("Room not found.")));
+    };
+    Ok((found_room, notes))
+}
+
+pub async fn get_started_by_id(db: &DatabaseConnection, id: i32) -> Result<rooms::Model> {
+    let found_room = repositories::room::get_active_by_id_and_started(db, id).await?;
     let Some(found_room) = found_room else {
         return Err(AppError::NotFound(String::from(
             "Room not found or Expired.",
@@ -48,7 +58,7 @@ pub async fn update_by_id(
     id: i32,
     request: UpdateRoomRequest,
 ) -> Result<rooms::Model> {
-    let mut found_room = get_by_id(db, id).await?.into_active_model();
+    let mut found_room = get_started_by_id(db, id).await?.into_active_model();
     found_room.title = ActiveValue::Set(request.title);
     found_room.class_level = ActiveValue::Set(request.class_level);
     found_room.cover = ActiveValue::Set(request.cover);
@@ -59,7 +69,7 @@ pub async fn update_by_id(
 }
 
 pub async fn delete_by_id(db: &DatabaseConnection, id: i32) -> Result<()> {
-    let mut found_room = get_by_id(db, id).await?.into_active_model();
+    let mut found_room = get_by_id(db, id).await?.0.into_active_model();
     found_room.deleted_at = ActiveValue::Set(Some(OffsetDateTime::now_utc()));
 
     repositories::room::save(db, found_room).await?;

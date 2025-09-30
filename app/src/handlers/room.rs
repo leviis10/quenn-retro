@@ -45,6 +45,18 @@ pub async fn find_all(
     Ok((StatusCode::OK, response))
 }
 
+pub async fn find_all_archive(
+    State(state): State<Arc<AppState>>,
+    query: Pagination<FindAllRoomQuery>,
+) -> Result<(StatusCode, SuccessResponse<Vec<GetRoomResponse>>)> {
+    let (pagination, found_rooms) = services::room::find_all_archive(&state.db, &query).await?;
+    let data = found_rooms.into_iter().map(GetRoomResponse::from).collect();
+
+    let response = SuccessResponse::new("Successfully find all rooms", data)
+        .with_pagination(PaginationResponse::from((query, pagination)));
+    Ok((StatusCode::OK, response))
+}
+
 pub async fn get_by_id(
     State(state): State<Arc<AppState>>,
     Path(id): Path<i32>,

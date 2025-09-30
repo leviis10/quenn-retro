@@ -1,5 +1,5 @@
-use crate::entities::prelude::Upvotes;
-use crate::entities::upvotes;
+use crate::entities::prelude::{Notes, Rooms, Upvotes};
+use crate::entities::{notes, rooms, upvotes};
 use crate::errors::Result;
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, ConnectionTrait, EntityTrait, ModelTrait, QueryFilter,
@@ -21,18 +21,25 @@ pub async fn get_today_by_id(
     id: i32,
     user_id: Uuid,
 ) -> Result<Option<upvotes::Model>> {
-    let now = OffsetDateTime::now_utc();
-    let today = now.date();
-
-    let start_date = today.with_time(Time::MIDNIGHT);
-    let end_date = today.with_time(Time::MAX);
-
-    let found_upvote = Upvotes::find_by_id(id)
+    let found_upvote_note = Upvotes::find_by_id(id)
         .filter(upvotes::Column::UserId.eq(user_id))
-        .filter(upvotes::Column::CreatedAt.between(start_date, end_date))
+        .find_also_related(Notes)
+        .filter(notes::Column::DeletedAt.is_null())
         .one(connection)
         .await?;
-    Ok(found_upvote)
+    if let Some((found_upvote, Some(found_note))) = found_upvote_note {
+        let today = OffsetDateTime::now_utc().date().with_time(Time::MIDNIGHT);
+        let found_note_room = Notes::find_by_id(found_note.id)
+            .find_also_related(Rooms)
+            .filter(rooms::Column::DeletedAt.is_null())
+            .filter(rooms::Column::CreatedAt.gte(today))
+            .one(connection)
+            .await?;
+        if let Some((_, Some(_))) = found_note_room {
+            return Ok(Some(found_upvote));
+        }
+    }
+    Ok(None)
 }
 
 pub async fn delete(connection: &impl ConnectionTrait, model: upvotes::Model) -> Result<()> {

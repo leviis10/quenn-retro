@@ -1,7 +1,9 @@
+use axum::http::{HeaderValue, Method};
 use sea_orm::{Database, DatabaseConnection};
 use std::error::Error;
 use std::sync::Arc;
 use tower::ServiceBuilder;
+use tower_http::cors::{AllowOrigin, CorsLayer};
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::EnvFilter;
 use tracing_subscriber::layer::SubscriberExt;
@@ -39,8 +41,27 @@ pub async fn start() -> Result<(), Box<dyn Error>> {
 
     let state = Arc::new(AppState { db });
 
+    let allowed_origins: Vec<HeaderValue> = std::env::var("ALLOWED_ORIGINS")?
+        .split(',')
+        .map(|value| value.parse().unwrap())
+        .collect();
+
     let app = routes::register()
-        .layer(ServiceBuilder::new().layer(TraceLayer::new_for_http()))
+        .layer(
+            ServiceBuilder::new()
+                .layer(TraceLayer::new_for_http())
+                .layer(
+                    CorsLayer::new()
+                        .allow_origin(AllowOrigin::list(allowed_origins))
+                        .allow_methods([
+                            Method::GET,
+                            Method::POST,
+                            Method::PUT,
+                            Method::PATCH,
+                            Method::DELETE,
+                        ]),
+                ),
+        )
         .with_state(state);
 
     let port = std::env::var("PORT")?;

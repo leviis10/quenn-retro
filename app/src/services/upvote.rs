@@ -11,7 +11,7 @@ pub async fn create(
     user_id: Uuid,
     request: CreateUpvoteRequest,
 ) -> Result<upvotes::Model> {
-    let found_note = services::note::get_today_by_id(db, request.note_id, user_id).await?;
+    let found_note = services::note::get_today_by_id(db, request.note_id).await?;
 
     let new_upvote = upvotes::ActiveModel {
         note_id: ActiveValue::Set(found_note.id),
@@ -29,7 +29,9 @@ async fn get_today_upvote_by_id(
 ) -> Result<upvotes::Model> {
     let found_upvote = repositories::upvote::get_today_by_id(db, id, user_id).await?;
     let Some(upvote) = found_upvote else {
-        return Err(AppError::NotFound(String::from("Upvote data not found")));
+        return Err(AppError::NotFound(String::from(
+            "Upvote data not found or expired",
+        )));
     };
     Ok(upvote)
 }

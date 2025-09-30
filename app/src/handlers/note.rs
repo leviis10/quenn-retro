@@ -56,6 +56,7 @@ pub async fn delete_by_id(
     UserId(user_id): UserId,
     jar: CookieJar,
 ) -> Result<(StatusCode, CookieJar)> {
+    tracing::debug!("user_id: {user_id}");
     services::note::delete_by_id(&state.db, id, user_id).await?;
 
     Ok((

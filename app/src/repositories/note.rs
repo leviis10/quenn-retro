@@ -1,5 +1,5 @@
-use crate::entities::notes;
-use crate::entities::prelude::Notes;
+use crate::entities::prelude::{Notes, Rooms};
+use crate::entities::{notes, rooms};
 use crate::errors::Result;
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, ConnectionTrait, EntityTrait, QueryFilter, TryIntoModel,
@@ -16,21 +16,36 @@ pub async fn save(
     Ok(result)
 }
 
-pub async fn get_today_active_by_id_and_user_id(
+pub async fn get_active_by_id_and_active_room_and_user_id(
     connection: &impl ConnectionTrait,
     id: i32,
     user_id: Uuid,
-) -> Result<Option<notes::Model>> {
-    let now = OffsetDateTime::now_utc();
-    let today = now.date();
-
-    let start_date = today.with_time(Time::MIDNIGHT);
-    let end_date = today.with_time(Time::MAX);
+) -> Result<Option<(notes::Model, Option<rooms::Model>)>> {
+    let today = OffsetDateTime::now_utc().date().with_time(Time::MIDNIGHT);
 
     let result = Notes::find_by_id(id)
+        .find_also_related(Rooms)
+        .filter(rooms::Column::CreatedAt.gte(today))
+        .filter(rooms::Column::DeletedAt.is_null())
         .filter(notes::Column::DeletedAt.is_null())
         .filter(notes::Column::UserId.eq(user_id))
-        .filter(notes::Column::CreatedAt.between(start_date, end_date))
+        .one(connection)
+        .await?;
+
+    Ok(result)
+}
+
+pub async fn get_active_by_id_and_active_room(
+    connection: &impl ConnectionTrait,
+    id: i32,
+) -> Result<Option<(notes::Model, Option<rooms::Model>)>> {
+    let today = OffsetDateTime::now_utc().date().with_time(Time::MIDNIGHT);
+
+    let result = Notes::find_by_id(id)
+        .find_also_related(Rooms)
+        .filter(rooms::Column::CreatedAt.gte(today))
+        .filter(rooms::Column::DeletedAt.is_null())
+        .filter(notes::Column::DeletedAt.is_null())
         .one(connection)
         .await?;
 
