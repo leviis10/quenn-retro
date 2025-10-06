@@ -8,7 +8,9 @@ use uuid::Uuid;
 #[serde(rename_all = "camelCase")]
 pub struct Upvote {
     pub id: i32,
+
     pub user_id: Uuid,
+
     pub created_at: OffsetDateTime,
 }
 
@@ -26,11 +28,17 @@ impl From<upvotes::Model> for Upvote {
 #[serde(rename_all = "camelCase")]
 pub struct Note {
     pub id: i32,
+
     pub board: String,
+
     pub description: String,
+
     pub created_at: OffsetDateTime,
+
     pub updated_at: OffsetDateTime,
+
     pub user_id: Uuid,
+
     pub upvotes: Vec<Upvote>,
 }
 
@@ -59,10 +67,8 @@ pub struct GetRoomResponse {
 
     pub class_level: String,
 
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub cover: Option<String>,
 
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 
     pub created_at: OffsetDateTime,
