@@ -25,3 +25,5 @@ features (there are no swagger docs and Request validation)
 - Proper Error Handling
 - Actuator Endpoint
 - Cookie Management
+- Response Compression
+- Handle Timeout

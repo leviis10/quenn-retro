@@ -12,7 +12,7 @@ serde_qs = "0.15.0"
 time = { version = "0.3.43", features = ["serde-human-readable"] }
 tokio = { version = "1.47.1", features = ["macros", "rt-multi-thread", "signal"] }
 tower = "0.5.2"
-tower-http = { version = "0.6.6", features = ["trace", "cors"] }
+tower-http = { version = "0.6.6", features = ["trace", "cors", "compression-full", "timeout"] }
 tracing = "0.1.41"
 tracing-subscriber = { version = "0.3.20", features = ["env-filter"] }
 uuid = { version = "1.17.0", features = ["v4"] }

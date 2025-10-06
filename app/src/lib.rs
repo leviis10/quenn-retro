@@ -2,9 +2,12 @@ use axum::http::{HeaderValue, Method};
 use sea_orm::{Database, DatabaseConnection};
 use std::error::Error;
 use std::sync::Arc;
+use std::time::Duration;
 use tokio::signal;
 use tower::ServiceBuilder;
+use tower_http::compression::CompressionLayer;
 use tower_http::cors::{AllowOrigin, CorsLayer};
+use tower_http::timeout::TimeoutLayer;
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::EnvFilter;
 use tracing_subscriber::layer::SubscriberExt;
@@ -61,7 +64,9 @@ pub async fn start() -> Result<(), Box<dyn Error>> {
                             Method::PATCH,
                             Method::DELETE,
                         ]),
-                ),
+                )
+                .layer(CompressionLayer::new())
+                .layer(TimeoutLayer::new(Duration::from_secs(30))),
         )
         .with_state(state);
 
