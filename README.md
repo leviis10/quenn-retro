@@ -27,3 +27,26 @@ features (there are no swagger docs and Request validation)
 - Cookie Management
 - Response Compression
 - Handle Timeout
+
+## How To Run
+
+This application is dockerized and pushed into the docker hub with the name of `leviis/queen-retro`. You can either
+build this application using docker build command or pull the image from docker hub. Make sure that the database is
+already migrated. You can run use `sea-orm-cli` or `cargo` command to run the migration first
+
+### Docker Run Command Example
+
+```bash
+docker container run \
+-e PORT=8080 \
+-e DB_HOST=<db-host> \
+-e DB_NAME=<db-name> \
+-e DB_USERNAME=<db-username> \
+-e DB_PASSWORD=<db-password> \
+-e RUST_LOG="info" \
+-e ALLOWED_ORIGINS=origin1,origin2,origin3 \
+-p 8080:8080 \
+-d \
+--name queen-retro \
+leviis/queen-retro:1.0.0
+```

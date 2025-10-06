@@ -47,7 +47,8 @@ pub async fn start() -> Result<(), Box<dyn Error>> {
 
     let state = Arc::new(AppState { db });
 
-    let allowed_origins: Vec<HeaderValue> = std::env::var("ALLOWED_ORIGINS")?
+    let allowed_origins: Vec<HeaderValue> = std::env::var("ALLOWED_ORIGINS")
+        .unwrap_or_else(|_err| String::from(""))
         .split(',')
         .map(|value| value.parse().unwrap())
         .collect();
