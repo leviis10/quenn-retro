@@ -2,7 +2,7 @@ use axum::http::{HeaderValue, Method};
 use sea_orm::{Database, DatabaseConnection};
 use std::error::Error;
 use std::sync::Arc;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 use tokio::signal;
 use tower::ServiceBuilder;
 use tower_http::compression::CompressionLayer;
@@ -28,6 +28,8 @@ struct AppState {
 }
 
 pub async fn start() -> Result<(), Box<dyn Error>> {
+    let start_time = Instant::now();
+
     tracing_subscriber::registry()
         .with(tracing_subscriber::fmt::layer())
         .with(EnvFilter::from_default_env())
@@ -74,6 +76,11 @@ pub async fn start() -> Result<(), Box<dyn Error>> {
     let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{port}")).await?;
     tracing::info!("Server is listening on {port}");
 
+    let startup_duration = start_time.elapsed();
+    tracing::info!(
+        "Axum application started successfully in {:?}",
+        startup_duration
+    );
     axum::serve(listener, app)
         .with_graceful_shutdown(shutdown_signal())
         .await?;
