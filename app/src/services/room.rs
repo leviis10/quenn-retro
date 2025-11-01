@@ -4,6 +4,7 @@ use crate::errors::{AppError, Result};
 use crate::extractors::Pagination;
 use crate::repositories;
 use sea_orm::{ActiveValue, DatabaseConnection, IntoActiveModel, ItemsAndPagesNumber};
+use std::backtrace::Backtrace;
 use time::OffsetDateTime;
 
 pub async fn create(db: &DatabaseConnection, request: CreateRoomRequest) -> Result<rooms::Model> {
@@ -38,7 +39,10 @@ pub async fn get_by_id(
 ) -> Result<(rooms::Model, Vec<(notes::Model, Vec<upvotes::Model>)>)> {
     let found_room = repositories::room::get_active_by_id(db, id).await?;
     let Some((found_room, notes)) = found_room else {
-        return Err(AppError::NotFound(String::from("Room not found.")));
+        return Err(AppError::NotFound(
+            String::from("Room not found."),
+            Backtrace::capture(),
+        ));
     };
     Ok((found_room, notes))
 }
@@ -46,9 +50,10 @@ pub async fn get_by_id(
 pub async fn get_started_by_id(db: &DatabaseConnection, id: i32) -> Result<rooms::Model> {
     let found_room = repositories::room::get_active_by_id_and_started(db, id).await?;
     let Some(found_room) = found_room else {
-        return Err(AppError::NotFound(String::from(
-            "Room not found or Expired.",
-        )));
+        return Err(AppError::NotFound(
+            String::from("Room not found or Expired."),
+            Backtrace::capture(),
+        ));
     };
     Ok(found_room)
 }

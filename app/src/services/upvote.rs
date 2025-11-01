@@ -4,6 +4,7 @@ use crate::errors::{AppError, Result};
 use crate::repositories;
 use crate::services;
 use sea_orm::{ActiveValue, DatabaseConnection};
+use std::backtrace::Backtrace;
 use uuid::Uuid;
 
 pub async fn create(
@@ -29,9 +30,10 @@ async fn get_today_upvote_by_id(
 ) -> Result<upvotes::Model> {
     let found_upvote = repositories::upvote::get_today_by_id(db, id, user_id).await?;
     let Some(upvote) = found_upvote else {
-        return Err(AppError::NotFound(String::from(
-            "Upvote data not found or expired",
-        )));
+        return Err(AppError::NotFound(
+            String::from("Upvote data not found or expired"),
+            Backtrace::capture(),
+        ));
     };
     Ok(upvote)
 }

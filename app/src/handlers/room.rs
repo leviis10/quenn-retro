@@ -10,6 +10,7 @@ use crate::services;
 use axum::Json;
 use axum::extract::{Path, State};
 use axum::http::{HeaderMap, StatusCode};
+use std::backtrace::Backtrace;
 use std::sync::Arc;
 
 pub async fn create(
@@ -21,7 +22,10 @@ pub async fn create(
         return Err(AppError::Unauthorized(String::from("Missing secret key")));
     };
     if secret_key.to_str()? != "supersecret" {
-        return Err(AppError::WrongSecret(String::from("Secret is not match")));
+        return Err(AppError::WrongSecret(
+            String::from("Secret is not match"),
+            Backtrace::capture(),
+        ));
     }
 
     let new_room = services::room::create(&state.db, request).await?;

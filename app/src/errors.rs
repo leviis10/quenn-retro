@@ -4,6 +4,7 @@ use axum::http::header::ToStrError;
 use axum::response::{IntoResponse, Response};
 use sea_orm::DbErr;
 use serde::Serialize;
+use std::backtrace::Backtrace;
 use std::convert::Infallible;
 
 #[derive(Serialize)]
@@ -18,12 +19,12 @@ pub enum ErrorCode {
 
 pub enum AppError {
     Database(DbErr),
-    NotFound(String),
+    NotFound(String, Backtrace),
     Unauthorized(String),
     ParseHeader(ToStrError),
     ParseQuery(serde_qs::Error),
     ParseUuid(uuid::Error),
-    WrongSecret(String),
+    WrongSecret(String, Backtrace),
     Infallible(Infallible),
 }
 
@@ -37,13 +38,16 @@ impl IntoResponse for AppError {
                     message: err.to_string(),
                 },
             ),
-            AppError::NotFound(err) => (
-                StatusCode::NOT_FOUND,
-                ErrorResponse {
-                    error_code: ErrorCode::NotFound,
-                    message: err,
-                },
-            ),
+            AppError::NotFound(err, backtrace) => {
+                tracing::error!("{backtrace:#?}");
+                (
+                    StatusCode::NOT_FOUND,
+                    ErrorResponse {
+                        error_code: ErrorCode::NotFound,
+                        message: err,
+                    },
+                )
+            }
             AppError::Unauthorized(err) => (
                 StatusCode::UNAUTHORIZED,
                 ErrorResponse {
@@ -65,13 +69,16 @@ impl IntoResponse for AppError {
                     message: err.to_string(),
                 },
             ),
-            AppError::WrongSecret(err) => (
-                StatusCode::FORBIDDEN,
-                ErrorResponse {
-                    error_code: ErrorCode::Forbidden,
-                    message: err,
-                },
-            ),
+            AppError::WrongSecret(err, backtrace) => {
+                tracing::error!("{backtrace:#?}");
+                (
+                    StatusCode::FORBIDDEN,
+                    ErrorResponse {
+                        error_code: ErrorCode::Forbidden,
+                        message: err,
+                    },
+                )
+            }
             AppError::Infallible(err) => (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 ErrorResponse {

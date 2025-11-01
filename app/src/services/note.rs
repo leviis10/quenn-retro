@@ -4,6 +4,7 @@ use crate::entities::sea_orm_active_enums::BoardEnum;
 use crate::errors::{AppError, Result};
 use crate::repositories;
 use sea_orm::{ActiveEnum, ActiveValue, DatabaseConnection, IntoActiveModel};
+use std::backtrace::Backtrace;
 use time::OffsetDateTime;
 use uuid::Uuid;
 
@@ -33,9 +34,10 @@ pub async fn get_today_by_id_and_user_id(
     let found_note =
         repositories::note::get_active_by_id_and_active_room_and_user_id(db, id, user_id).await?;
     let Some((found_note, _)) = found_note else {
-        return Err(AppError::NotFound(String::from(
-            "Note not found or expired",
-        )));
+        return Err(AppError::NotFound(
+            String::from("Note not found or expired"),
+            Backtrace::capture(),
+        ));
     };
 
     Ok(found_note)
@@ -44,9 +46,10 @@ pub async fn get_today_by_id_and_user_id(
 pub async fn get_today_by_id(db: &DatabaseConnection, id: i32) -> Result<notes::Model> {
     let found_note = repositories::note::get_active_by_id_and_active_room(db, id).await?;
     let Some((found_note, _)) = found_note else {
-        return Err(AppError::NotFound(String::from(
-            "Note not found or expired",
-        )));
+        return Err(AppError::NotFound(
+            String::from("Note not found or expired"),
+            Backtrace::capture(),
+        ));
     };
 
     Ok(found_note)
